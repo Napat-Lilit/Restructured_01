@@ -1,0 +1,10 @@
+.vscode/
+
+# Ignore model files & users data
+assets/
+object/
+rawdata/
+results/
+SetupConfig/
+
+a.out

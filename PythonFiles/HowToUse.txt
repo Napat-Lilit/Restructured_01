@@ -1,0 +1,50 @@
+Dependencies : vtk
+
+---------------------------
+
+How to set up :
+
+Place all related raw vtk files in a folder inside the rawdata folder. 
+Also, add another folder in the object folder to store models later on. Both folders having the same name is not a requirement, but maybe a good practice.
+
+    E.g. create a folder called goto01 in both the rawdata and the object folder
+    ~/rawdata/goto01/result_001.vtk
+    ~/object/goto01/
+
+* Both binary and ascii style vtk should work. However, only some of dataset types will work at the moment.
+
+---------------------------
+
+How to use :
+
+1. Use the visualizer to help you design the best threshold number
+
+    python visualizer_check.py goto01/result_001.vtk 0.8  
+
+Here, 0.8 is the threshold value you want to check.
+
+2. Once you have the model you are happy with, run the isosurface extractor
+
+    python isosurface_extractor.py input_file output_file threshold reductionratio starting_index ending_index
+
+There are two ways to use the code, one is to emit the ending index and make a single model
+
+    python isosurface_extractor.py goto01/result_ goto01/object_ 0.8 0.7 5 
+
+Which will read the file rawdata/goto01/result_005.vtk and produce a model in object/goto01/object_005.obj
+* Be sure to give not only folder name (experiment01), but also the naming style as well (result_).
+
+Or add the ending index as well and produce all the models associated with all the indices from start to finish
+
+    python isosurface_extractor.py goto01/result_ goto01/object_ 0.8 0.7 5 10
+
+Which will read/produce 6 files in total. From result_005.vtk to result_010.vtk.
+
+---------------------------
+
+Ending notes :
+When in doubt, you can always use --help flag to check how the program work
+
+    python isosurface_extractor.py --help
+
+---------------------------
