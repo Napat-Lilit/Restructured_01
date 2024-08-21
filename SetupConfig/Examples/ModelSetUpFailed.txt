@@ -1,0 +1,6 @@
+CombinationType: STL
+
+OBJModelMats: lam,1.0,0.2,0.2 lam,1.0,0.2,0.2 lam,1.0,0.2,0.2 lam,1.0,0.2,0.2 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0 lam,0.2,0.2,1.0
+
+OBJModelName: ./object/goto02/object01_0_ ./object/goto02/object01_1_ ./object/goto02/object01_2_ ./object/goto02/object01_3_ ./object/goto02/object02_0_ ./object/goto02/object02_1_ ./object/goto02/object02_2_ ./object/goto02/object02_3_ ./object/goto02/object02_4_ ./object/goto02/object02_5_ ./object/goto02/object02_6_ ./object/goto02/object02_7_ ./object/goto02/object02_8_ ./object/goto02/object02_9_ ./object/goto02/object02_10_ ./object/goto02/object02_11_ ./object/goto02/object02_12_ ./object/goto02/object02_13_ ./object/goto02/object02_14_ ./object/goto02/object02_15_
+

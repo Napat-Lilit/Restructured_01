@@ -1,0 +1,17 @@
+CombinationType: IsoSurfaceAndSphere
+
+OBJModelMats: lam,1.0,0.2,0.2
+
+OBJModelName: ./object/motoori01/object_
+
+SphereModelName: ./object/motoori01/sphere_object_
+
+SphereModelMats: lam,0.2,0.2,1.0
+
+SphereModelNum: 8192
+
+SphereModelRad: 0.01
+
+WallMats: lam,0.8,0.8,0.8 lam,0.8,0.8,0.8
+
+WallGeo: xy,0,2,0,4,0 xy,0,2,0,4,2

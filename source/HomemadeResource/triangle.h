@@ -6,7 +6,7 @@
 #include "hittable.h"
 #include "transform.h"
 
-extern bool TrustNormal;
+// extern bool TrustNormal;
 
 struct TriangleMesh {
     TriangleMesh(const Transform& tran, int nTriangles, const int *vertexIndices, int nVertices, const vec3 *P, const vec3 *N);
@@ -205,12 +205,13 @@ bool Triangle ::  hit (const ray& r, float t_min, float t_max, hit_record& rec) 
     // std :: cout << "Before assign interpolated normal" << std :: endl;
 
     // if (mesh -> n) {
-    if (TrustNormal) {
-        interpolated_normal = unit_vector(b0 * mesh->n[v[0]] + b1 * mesh->n[v[1]] + b2 * mesh->n[v[2]]);
-    }
-    else {
-        interpolated_normal = geometric_normal;
-    }
+    // if (TrustNormal) {
+    //     interpolated_normal = unit_vector(b0 * mesh->n[v[0]] + b1 * mesh->n[v[1]] + b2 * mesh->n[v[2]]);
+    // }
+    // else {
+    //     interpolated_normal = geometric_normal;
+    // }
+    interpolated_normal = geometric_normal;
 
     rec.set_geometric_normal(r, geometric_normal);
     rec.set_interpolated_normal(interpolated_normal);

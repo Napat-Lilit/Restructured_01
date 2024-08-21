@@ -1,0 +1,9 @@
+vup: 0.0 0.0 -1.0
+
+lookfrom: 17.0 2.5 3.0 
+
+lookat: 3.0 2.5 3.0 
+
+samples_per_pixel: 20
+
+sample_max_depth: 20

@@ -1,0 +1,7 @@
+vup: -0.137947 0.44906 0.882789
+
+lookfrom: 107.665 -70.0659 49.8597
+lookat: 106.942 -69.5027 49.4602
+
+samples_per_pixel: 15
+sample_max_depth: 15

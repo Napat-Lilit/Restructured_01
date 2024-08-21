@@ -1,10 +1,9 @@
 .vscode/
 
 # Ignore model files & users data
-assets/
-object/
-rawdata/
+dynamicModels/
+staticModels/
+
 results/
-SetupConfig/
 
 a.out

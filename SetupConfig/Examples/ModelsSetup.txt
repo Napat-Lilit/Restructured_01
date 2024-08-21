@@ -1,0 +1,9 @@
+CombinationType: IsoSurface
+
+OBJModelMats: metal,0.2,0.8,0.2,0.8
+
+OBJModelName: ./object/experiment01/object_001.obj
+
+WallMats: lam,0.1,0.1,0.1
+
+WallGeo: xz,-2,8,0,8,-2

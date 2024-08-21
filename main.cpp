@@ -26,10 +26,16 @@
 #include <omp.h>
 #include <iostream>
 #include <chrono>
+#include <cmath>
 
-bool TrustNormal;
-bool naive;
-bool HasLights;
+/*
+    Undergoing refactoring + restructuring, many functionalities are unusable at the moment.
+    1. Light source importance sampling
+    2. OBJ models (most notable, trust_normal is removed -> Not sure if we should reinstated in the future or not...)
+    2. Sphere or any other magic models
+    3. Dynamic ambient light
+    4. Denoising is removed, will make it into a separate sub-project
+*/
 
 std :: string out_file_name;
 int starting_index;
@@ -39,18 +45,9 @@ int parallel_start;
 int parallel_end;
 
 std :: vector<std :: string> model_names;
-std :: vector<std :: string> sphere_names;
 std :: vector<int> model_numbers;
-std :: vector<std :: string> model_types;
 std :: vector<shared_ptr<material>> model_mats;
-std :: vector<shared_ptr<material>> sphere_mats;
 std :: vector<shared_ptr<hittable>> lights;
-std :: vector<shared_ptr<hittable>> walls;
-std :: vector<unsigned long> sphere_num;
-std :: vector<float> sphere_rad;
-
-// To determined what type of importor/world builder should be used
-std :: string CombinationType;
 
 // Camera. Be careful about the relation between vup and our viewing direction.
 vec3 vup;
@@ -61,14 +58,12 @@ int samples_per_pixel;
 int sample_max_depth;
 
 // Background Color
-color BackgroundColor;
+color BackgroundColorForIllumination;
+color BackgroundColorForOutput;
 
 // Assets
-bool HasAssets;
 std :: vector<std :: string> asset_names;
 std :: vector<shared_ptr<material>> asset_mats;
-// Transformation to the models
-std :: vector <Transform> asset_trans;
 
 int main(int argc, char **argv) {
     // First argv (excluding the name of the program) should be num_threads 
@@ -76,16 +71,18 @@ int main(int argc, char **argv) {
     omp_set_num_threads(num_threads);
 
     // Image Setup
-    const auto aspect_ratio = 1.0;
-    const int image_width = 1500;
+    const auto aspect_ratio = 1.7777;
+    const int image_width = 1920;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int denoising_sample = 10;
 
     int padding_amount = 3;
 
     // Timing
     auto start = std :: chrono :: high_resolution_clock::now();
     Initialization();
-    auto ray_color = (naive)? naive_tracer : explicit_tracer;
+    // auto ray_color = (naive)? naive_tracer : explicit_tracer;
+    auto ray_color = naive_tracer; // On the process of refactoring, temporary forcing users to use naive rendering for simplicity
 
     auto vfov = 40.0;
     auto aperture = 0.0;
@@ -95,68 +92,52 @@ int main(int argc, char **argv) {
     // World Setter
     unsigned init_seed;
 
-    // Transformation to the models
-    std :: vector <Transform> trans;
-    Transform scaling_tran_01 = Scale(1.0, 1.0, 1.0);
-    trans.push_back(scaling_tran_01);
-
-    // std :: cout << "the value of starting_index is " << starting_index << std :: endl;
-
     for (int i = starting_index; i <= ending_index ; i++) {
-        // Additional Setups
-        std :: ofstream myfile;
-        std :: stringstream ss;
-        ss << "./results/" << out_file_name << std :: setw(padding_amount) << std :: setfill('0') << i << ".ppm";   // Output image file name
-        std :: string fname = ss.str();
-        myfile.open(fname);
+        // Denoise Test
+        std :: ofstream myfile_normal;
+        std :: stringstream ss_normal;
+        ss_normal << "./results/" << out_file_name << "_normalMap_" << std :: setw(padding_amount) << std :: setfill('0') << i << ".ppm";   // Output image file name
+        std :: string fname_normal = ss_normal.str();
+        myfile_normal.open(fname_normal);
+        std :: ofstream myfile_position;
+        std :: stringstream ss_position;
+        ss_position << "./results/" << out_file_name << "_positionMap_" << std :: setw(padding_amount) << std :: setfill('0') << i << ".ppm";   // Output image file name
+        std :: string fname_position = ss_position.str();
+        myfile_position.open(fname_position);
+        std :: ofstream myfile_standardized;
+        std :: stringstream ss_standardized;
+        ss_standardized << "./results/" << out_file_name << "_raytracedMap_" << std :: setw(padding_amount) << std :: setfill('0') << i << ".ppm";   // Output image file name
+        std :: string fname_standardized = ss_standardized.str();
+        myfile_standardized.open(fname_standardized);
 
         std :: vector<std :: string> current_model_names;
-        std :: vector<std :: string> current_sphere_names;
-        std :: vector<shared_ptr<hittable>> current_lights;
         for (int j = 0; j < model_names.size(); j++) {
             std :: stringstream ss02;
-            if (CombinationType == "STL") {
-                ss02 << model_names[j] << std :: setw(padding_amount) << std :: setfill('0') << i << ".stl";
-            }
-            else {
-                ss02 << model_names[j] << std :: setw(padding_amount) << std :: setfill('0') << i << ".obj";
-            }
+            ss02 << model_names[j] << std :: setw(padding_amount) << std :: setfill('0') << i << ".stl";
             current_model_names.push_back(ss02.str());
         }
-        for (int j = 0; j < sphere_names.size(); j++) {
-            std :: stringstream ss02;
-            ss02 << sphere_names[j] << std :: setw(padding_amount) << std :: setfill('0') << i << ".npy";
-            current_sphere_names.push_back(ss02.str());
-        }
-        // Only support aarect lights. In case of many light sources, make the x component slightly different between lights
         hittable_list world;
-        if (CombinationType == "IsoSurface") 
-            world = obj_world_builder(current_model_names, model_mats, trans, lights, walls, init_seed);
-        else if (CombinationType == "Spheres") 
-            world = num_array_world_builder(current_sphere_names, sphere_mats, sphere_num, sphere_rad, lights, walls, init_seed);
-        else if (CombinationType == "STL") {
-            world = stl_world_builder(current_model_names, model_mats, trans, lights, walls, init_seed);
-            // world = stl_world_builder_with_assets(current_model_names, model_mats, trans, lights, walls, asset_names, asset_mats, asset_trans, init_seed);
-        }
-        else if (CombinationType == "IsoSurfaceAndSphere") {
-            // How to deal with this again
-            world = mix_world_builder(current_sphere_names, sphere_mats, sphere_num, sphere_rad, 
-            current_model_names, model_mats, trans, lights, walls, init_seed);
-        }
-        else 
-            std :: cerr << "Unknown combination type" << std :: endl;
+        // These will be used to make positional mapping, which is necessary for denoising
+        vec3 worldMin;
+        vec3 worldMax;
+        world = stl_world_builder(current_model_names, model_mats, asset_names, asset_mats, init_seed, worldMin, worldMax);
         
         auto end = std :: chrono :: high_resolution_clock :: now();
         auto total_duration = std :: chrono :: duration_cast<std :: chrono :: seconds>(end - start);
         std :: cerr << "\nFinished reading up the " << i << "-th file in : " << total_duration.count() << " seconds" << std :: endl;
-        std :: cerr << "There are " << world.objects.size() << " objects in world (models counted as one + number of lights and other objects such as walls in the world)" 
+        std :: cerr << "There are " << world.objects.size() << " models in world" 
         << std :: endl << std :: endl;
         std :: cerr << "The importation and world buiding completed with no issues, proceed to the main rendering process" << std :: endl << std :: endl;
         std :: cerr << "---------------------------------------------------------------------------------" << std :: endl;
         std :: cerr << std :: endl << "[The rendering process log]" << std :: endl << "* Ideally, there should be nothing here" << std :: endl;
 
-        myfile << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-        static color picture_map[image_height][image_width];
+        // Denoise Test
+        myfile_normal << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        myfile_position << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        myfile_standardized << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        std::vector<std::vector<vec3>> normal_map(image_height, std::vector<vec3>(image_width));
+        std::vector<std::vector<vec3>> position_map(image_height, std::vector<vec3>(image_width));
+        std::vector<std::vector<vec3>> standardized_picture_map(image_height, std::vector<vec3>(image_width));
 
         #pragma omp parallel
         {
@@ -164,7 +145,10 @@ int main(int argc, char **argv) {
 
             #pragma omp for schedule(dynamic, 8)
             for (int j = image_height - 1; j >= 0; j--){
-                color tmp[image_width];
+                color tmp_normal[image_width];
+                color tmp_position[image_width];
+                color tmp_standardized[image_width];
+
                 for (int i = 0; i < image_width; i++){
                     color pixel_color(0, 0, 0);
                     for (int s = 0; s < samples_per_pixel; s++) {
@@ -173,11 +157,31 @@ int main(int argc, char **argv) {
                         auto v = (j + random_float(seed)) / (image_height - 1);
                         ray r = cam.get_ray(u, v, seed);
 
-                        pixel_color += ray_color(r, BackgroundColor, world, sample_max_depth, lights, true, seed);
+                        // true here refers to the first shot of ray tracing -> used for determining which background color to use
+                        pixel_color += ray_color(r, BackgroundColorForIllumination, BackgroundColorForOutput, world, sample_max_depth, true, seed);
                     }
-                    tmp[i] = pixel_color;
+                    tmp_standardized[i] = pixel_color/samples_per_pixel;
                 }
-                std :: copy(std :: begin(tmp), std :: end(tmp), std :: begin(picture_map[j]));
+                // Denoiser Test
+                for (int i = 0; i < image_width; i++){
+                    color pixel_color_normal(0, 0, 0);
+                    color pixel_color_position(0, 0, 0);
+                    for (int s = 0; s < denoising_sample; s++) {
+
+                        auto u = (i + random_float(seed)) / (image_width - 1);
+                        auto v = (j + random_float(seed)) / (image_height - 1);
+                        ray r = cam.get_ray(u, v, seed);
+                        
+                        pixel_color_normal += normal_color(r, world);
+                        pixel_color_position += position_color(r, world, worldMin, worldMax, vec3());
+                    }
+                    tmp_normal[i] = pixel_color_normal/(static_cast<float>(denoising_sample));
+                    tmp_position[i] = pixel_color_position/(static_cast<float>(denoising_sample));
+                }
+
+                std :: copy(std :: begin(tmp_normal), std :: end(tmp_normal), std :: begin(normal_map[j]));
+                std :: copy(std :: begin(tmp_position), std :: end(tmp_position), std :: begin(position_map[j]));
+                std :: copy(std :: begin(tmp_standardized), std :: end(tmp_standardized), std :: begin(standardized_picture_map[j]));
             }
         }
         end = std :: chrono :: high_resolution_clock :: now();
@@ -186,16 +190,21 @@ int main(int argc, char **argv) {
 
         for (int j = image_height - 1; j>=0; j--){
             for (int i = 0; i < image_width; i++){
-                write_color(myfile, picture_map[j][i], samples_per_pixel);
+                write_color(myfile_normal, normal_map[j][i], 1);
+                write_color(myfile_position, position_map[j][i], 1);
+                write_color(myfile_standardized, standardized_picture_map[j][i], 1);
             }
         }
+        std :: cerr << "Normal image written to " << fname_normal << std :: endl;
+        std :: cerr << "Position image written to " << fname_position << std :: endl;
+        std :: cerr << "Standard image written to " << fname_standardized << std :: endl;
+        myfile_normal.close();
+        myfile_position.close();
+        myfile_standardized.close();
 
         end = std :: chrono :: high_resolution_clock :: now();
         total_duration = std :: chrono :: duration_cast<std :: chrono :: seconds>(end - start);
-        std :: cerr << "Finish the whole process in : " << total_duration.count() 
-        << " seconds ----> Image written to " << fname << std :: endl << std :: endl;
+        std :: cerr << std :: endl << "Finish saving results in : " << total_duration.count() << " seconds" << std :: endl << std :: endl;
         std :: cerr << "--------------------------------------------------------------------------------- Finish processing file no. " << i << std :: endl;
-
-        myfile.close();
     }
 }

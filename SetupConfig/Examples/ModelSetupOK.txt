@@ -1,0 +1,5 @@
+CombinationType: STL
+
+OBJModelMats: lam,1.0,0.2,0.2 lam,1.0,0.2,0.2 lam,1.0,0.2,0.2 lam,1.0,0.2,0.2
+
+OBJModelName: ./object/goto02/object01_0_ ./object/goto02/object01_1_ ./object/goto02/object01_2_ ./object/goto02/object01_3_
