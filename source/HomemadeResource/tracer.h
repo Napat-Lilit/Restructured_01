@@ -7,15 +7,17 @@
 #include "hit_record.h"
 #include "material.h"
 
-// #define DYNAMIC_BACKGROUND
-bool DynamicLight;
+#include "exrHandler.h"
+
+extern bool hasOverlayBackgroundColor;
+extern color BackgroundColorForOutput;
 
 inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf) {
     float f = nf * fPdf, g = ng * gPdf;
     return (f * f) / (f * f + g * g);
 }
 
-color naive_tracer(const ray& r, const color& BackgroundColorForIllumination, const color& BackgroundColorForOutput ,const hittable_list& world, int depth, bool firstShot, unsigned int& seed){
+color naive_tracer(const ray& r, const color& BackgroundColorForIllumination, const hittable_list& world, int depth, bool firstShot, unsigned int& seed){
     hit_record rec;
     scatter_record srec;
 
@@ -25,7 +27,7 @@ color naive_tracer(const ray& r, const color& BackgroundColorForIllumination, co
     }
 
     if (!world.hit(r, 0.f, Infinity, rec)) {
-        if (firstShot) return BackgroundColorForOutput;
+        if (firstShot && hasOverlayBackgroundColor) return BackgroundColorForOutput;
         else return BackgroundColorForIllumination;
     }
 
@@ -36,7 +38,7 @@ color naive_tracer(const ray& r, const color& BackgroundColorForIllumination, co
         return emitted;
     }
     if (srec.is_specular) {
-        return srec.attenuation * naive_tracer(srec.specular_ray, BackgroundColorForIllumination, BackgroundColorForOutput, world, depth-1, false, seed);
+        return srec.attenuation * naive_tracer(srec.specular_ray, BackgroundColorForIllumination, world, depth-1, false, seed);
     }
 
     ray scattered(rec.p, srec.pdf_ptr -> generate(seed));
@@ -50,8 +52,46 @@ color naive_tracer(const ray& r, const color& BackgroundColorForIllumination, co
     }
     color scattering_pdf = cosine_term * rec.mat_ptr -> scattering_bsdf(r, rec, scattered);
 
-    return emitted + scattering_pdf * naive_tracer(scattered, BackgroundColorForIllumination, BackgroundColorForOutput, world, depth - 1, false, seed) / pdf_val;
+    return emitted + scattering_pdf * naive_tracer(scattered, BackgroundColorForIllumination, world, depth - 1, false, seed) / pdf_val;
 }
+color naive_tracer_exr(const ray& r, const exrHandler& exrObject ,const hittable_list& world, int depth, bool firstShot, unsigned int& seed){
+    hit_record rec;
+    scatter_record srec;
+
+    if (depth <= 0) {
+        // std :: cout << "Reach max depth" << std :: endl;
+        return color(0, 0, 0);
+    }
+
+    if (!world.hit(r, 0.f, Infinity, rec)) {
+        if (firstShot && hasOverlayBackgroundColor) return BackgroundColorForOutput;
+        else return exrObject.getSampleFromRay(r);
+    }
+
+    // std :: cout << "hit something at depth : " << depth << std :: endl;
+    color emitted = rec.mat_ptr -> emitted();
+
+    if (!rec.mat_ptr -> scatter(r, rec, srec, seed)) {
+        return emitted;
+    }
+    if (srec.is_specular) {
+        return srec.attenuation * naive_tracer_exr(srec.specular_ray, exrObject, world, depth-1, false, seed);
+    }
+
+    ray scattered(rec.p, srec.pdf_ptr -> generate(seed));
+    auto pdf_val = srec.pdf_ptr -> value(scattered.direction());
+    if (pdf_val < 0.000001) pdf_val = 0.000001;
+
+    float cosine_term = dot(rec.interpolated_normal, unit_vector(scattered.direction()));
+    if (cosine_term < 0) {
+        std :: cout << "Interpolated_normal wrong side" << std :: endl;
+        return emitted;
+    }
+    color scattering_pdf = cosine_term * rec.mat_ptr -> scattering_bsdf(r, rec, scattered);
+
+    return emitted + scattering_pdf * naive_tracer_exr(scattered, exrObject, world, depth-1, false, seed) / pdf_val;
+}
+
 // These will be used for rendering normal and positional mapping, necessary for denoising purpose
 color normal_color(const ray& r, const hittable_list& world){
     hit_record rec;

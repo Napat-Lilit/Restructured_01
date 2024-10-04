@@ -1,7 +1,8 @@
-vup: -0.137947 0.44906 0.882789
+# We can also configure the camera using .gt file
+vup: -0.136552 0.126829 0.98248
+lookfrom: 1.52125 -29.0591 4.65918
+lookat: 1.45217 -28.071 4.52202
+# cameras_batch: ./movementBatchs/output03.gt
 
-lookfrom: 107.665 -70.0659 49.8597
-lookat: 106.942 -69.5027 49.4602
-
-samples_per_pixel: 15
-sample_max_depth: 15
+samples_per_pixel: 3
+sample_max_depth: 5

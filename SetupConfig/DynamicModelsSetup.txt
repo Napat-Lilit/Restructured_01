@@ -1,3 +1,15 @@
+# OBJModelMats: metal,0.9,0.05,0.05,0.05
+# BJModelName: ./dynamicModels/sahekiReal/sahekiMovingFuta_
 
-OBJModelMats: lam,0.2,0.2,1.0
-OBJModelName: ./dynamicModels/SampleObjects/OdaRotated_
+OBJModelMats: metal,0.9,0.05,0.05,0.05
+OBJModelName: ./dynamicModels/MonkeyTest/MonkeyTest
+
+# 1 means pos data only
+# 2 means pos and radius
+# 3 means pos and type(int)
+# 4 means pos and radius and type(int)
+# Don't put line or anything between these ! think of them as a set together
+
+# SphereInputType: 4
+# SphereName: ./dynamicModels/sahekiReal/prc000000
+# SphereMats: lam,0.4,0.0,0.0 lam,0.0,0.4,0.0 lam,0.0,0.0,0.4

@@ -4,6 +4,9 @@
 dynamicModels/
 staticModels/
 
+*.exr
+*.gt
+
 results/
 
 a.out

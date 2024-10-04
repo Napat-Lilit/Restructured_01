@@ -12,6 +12,7 @@
 
 class camera{
     public:
+        camera () {};
         camera (point3 lookfrom, point3 lookat, vec3 vup, float vfov, float aspect_ratio,
             float aperture, float focus_distance) {
 

@@ -158,7 +158,7 @@ class beer_lambert_dielectric : public material {
 };
 bool beer_lambert_dielectric :: scatter (const ray& r_in, hit_record& rec, scatter_record& srec, unsigned int & seed) const {
 
-    float fuzz = 0.01;  // Manipultaing this value can give us new-looking material as well as more realistic glass
+    float fuzz = 0.001;  // Manipultaing this value can give us new-looking material as well as more realistic glass
     
     float refraction_ratio;
 

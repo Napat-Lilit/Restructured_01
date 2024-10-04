@@ -19,6 +19,10 @@ class vec3 {
         float y() const {return e[1];}
         float z() const {return e[2];}
 
+        void x(float newVal) {e[0] = newVal;}
+        void y(float newVal) {e[1] = newVal;}
+        void z(float newVal) {e[2] = newVal;}
+
         // Operator overload
         vec3 operator-() const {return vec3(-e[0], -e[1], -e[2]);}
         float operator[](int i) const {return e[i];}
